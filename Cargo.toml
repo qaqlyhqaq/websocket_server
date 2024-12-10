@@ -1,0 +1,11 @@
+[package]
+name = "websocket_server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+actix = "0.13"
+actix-web = "4"
+actix-ws = "0.3"
+futures-util = "0.3.31"
+log = "0.4.22"
