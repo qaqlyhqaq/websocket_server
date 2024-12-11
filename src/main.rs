@@ -24,7 +24,7 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
                 let stdin = std::io::stdin();
                 stdin.read_line(&mut input_str).unwrap();
                 // let x = include_str!("../resource/example.1.txt");
-                let x = include_str!("../resource/example.txt");
+                let x = include_str!("../resource/example.json");
                 let value = json!({
                     "data": x,
                 });
