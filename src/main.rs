@@ -4,7 +4,6 @@
 use std::collections::HashMap;
 use actix_web::{App, HttpRequest, HttpServer, Responder, middleware::Logger, web};
 use actix_ws::Message;
-use futures_util::stream::StreamExt;
 use log::log;
 use std::io::Read;
 use std::sync::mpmc::TryRecvError;
@@ -23,23 +22,25 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
                 let mut input_str = String::new();
                 let stdin = std::io::stdin();
                 stdin.read_line(&mut input_str).unwrap();
-                // let x = include_str!("../resource/example.1.txt");
-                let x = include_str!("../resource/example.json");
+                let x = include_str!("../resource/example.1.txt");
+                // let x = include_str!("../resource/example.json");
                 let value = json!({
                     "data": x,
                 });
                 let string = serde_json::to_string(&value).unwrap();
-                println!("string:{}", string);
+                // println!("string:{}", string);
                 sender.send(string).unwrap();
                 println!("发送指令");
             }
         })
         .thread();
 
-        while let Some(Ok(msg)) = msg_stream.next().await {
+        while let Some(Ok(msg)) = msg_stream.recv().await {
+            println!("start try recv!");
             match receiver.try_recv() {
                 Ok(text) => {
                     //发送消息
+                    println!("{}", &text);
                     session.text(text).await.unwrap();
                 }
                 Err(_) => {}
@@ -55,6 +56,8 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
                 Message::Text(msg) => println!("Got text: {msg}"),
                 _ => break,
             }
+
+            println!("msg_stream.next() end !");
         }
 
         let _ = session.close(None).await;
