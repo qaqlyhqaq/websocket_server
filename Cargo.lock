@@ -1387,6 +1387,8 @@ dependencies = [
  "actix-ws",
  "futures-util",
  "log",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

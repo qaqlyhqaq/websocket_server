@@ -1,5 +1,7 @@
 #![feature(slice_as_array)]
 #![feature(mpmc_channel)]
+
+use std::collections::HashMap;
 use actix_web::{App, HttpRequest, HttpServer, Responder, middleware::Logger, web};
 use actix_ws::Message;
 use futures_util::stream::StreamExt;
@@ -7,6 +9,7 @@ use log::log;
 use std::io::Read;
 use std::sync::mpmc::TryRecvError;
 use std::sync::mpsc::channel;
+use serde_json::{json, Value};
 
 async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Responder> {
     let (response, mut session, mut msg_stream) = actix_ws::handle(&req, body)?;
@@ -15,22 +18,29 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
         let (sender, receiver) = channel();
 
         let _ = std::thread::spawn(move || {
+            println!("开始发送指令");
             loop {
-                println!("请输入字母或数字后回车："); //1
-                let mut input_str = String::new(); //2
-                let stdin = std::io::stdin(); //3
-                stdin.read_line(&mut input_str).unwrap(); //4
-                println!("您的输入是：{}", input_str); //5
-                sender.send(input_str).unwrap();
+                let mut input_str = String::new();
+                let stdin = std::io::stdin();
+                stdin.read_line(&mut input_str).unwrap();
+                // let x = include_str!("../resource/example.1.txt");
+                let x = include_str!("../resource/example.txt");
+                let value = json!({
+                    "data": x,
+                });
+                let string = serde_json::to_string(&value).unwrap();
+                println!("string:{}", string);
+                sender.send(string).unwrap();
+                println!("发送指令");
             }
         })
         .thread();
 
         while let Some(Ok(msg)) = msg_stream.next().await {
             match receiver.try_recv() {
-                Ok(_) => {
+                Ok(text) => {
                     //发送消息
-                    session.text("发送消息 !").await.unwrap();
+                    session.text(text).await.unwrap();
                 }
                 Err(_) => {}
             }
