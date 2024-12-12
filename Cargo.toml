@@ -11,3 +11,4 @@ futures-util = "0.3.31"
 log = "0.4.22"
 serde_json = { version = "1.0.117" }
 serde = { version = "1.0.203", features = ["derive"] }
+tokio = {version = "*"}
