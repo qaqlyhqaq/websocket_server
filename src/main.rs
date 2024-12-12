@@ -35,6 +35,8 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
                     }
                 }
 
+                input_str.clear();
+
                 let x = include_str!("../resource/example.1.txt");
                 // let x = include_str!("../resource/example.json");
                 let value = json!({
@@ -56,7 +58,7 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
                         session.clone().close(None).await.unwrap();
                         continue;
                     }else{
-                        println!("发送消息:{}", text);
+                        // println!("发送消息:{}", text);
                         session.text(text).await.unwrap();
                     }
                 }
@@ -64,7 +66,7 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
             }
             match msg {
                 Message::Ping(bytes) => {
-                    println!("pong: {:?}", String::from_utf8(bytes.to_owned().to_vec()));
+                    // println!("pong: {:?}", String::from_utf8(bytes.to_owned().to_vec()));
                     if session.pong(&bytes).await.is_err() {
                         eprintln!("Session disconnected");
                         return;
