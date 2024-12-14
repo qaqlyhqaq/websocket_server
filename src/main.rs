@@ -2,86 +2,68 @@
 #![feature(mpmc_channel)]
 #![feature(pattern)]
 #![feature(async_closure)]
+#![feature(duration_constructors)]
 
-use std::collections::HashMap;
+use actix_web::rt::Runtime;
 use actix_web::{App, HttpRequest, HttpServer, Responder, middleware::Logger, web};
 use actix_ws::Message;
+use futures_util::StreamExt;
 use log::log;
+use serde_json::{Value, json};
+use std::collections::HashMap;
 use std::io::Read;
+use std::ops::Deref;
 use std::str::pattern::Pattern;
 use std::sync::Arc;
 use std::sync::mpmc::TryRecvError;
 use std::sync::mpsc::channel;
-use actix_web::rt::Runtime;
-use serde_json::{json, Value};
+use std::thread;
+use std::time::Duration;
+use tokio::time::sleep;
 
 async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Responder> {
     let (response, mut session, mut msg_stream) = actix_ws::handle(&req, body)?;
 
-    actix_web::rt::spawn(async move {
+    // let (send,recv) = channel();
 
-        let mut session_ = session;
-        let mut session1 = session_.clone();
-
-        tokio::task::spawn(async move  {
-            println!("开始发送指令");
-            let mut input_str = String::new();
-            let stdin = std::io::stdin();
-            loop {
-                stdin.read_line(&mut input_str).unwrap();
-
-                match input_str {
-                    ref in_str if in_str.starts_with("e") => {
-                        unsafe {
-                            session_.close(None).await.unwrap();
+    let handle1 = actix_web::rt::spawn(async move {
+        loop {
+            tokio::select! {
+                _ = sleep(Duration::from_secs(5)) => {
+                }
+                msg = msg_stream.next() => {
+                            match msg.unwrap() {
+                        Ok(Message::Ping(bytes)) => {
+                            if session.clone().pong(&bytes).await.is_err() {
+                                return;
+                            }
                         }
-                        break;
+
+                        Ok(Message::Text(msg)) => println!("Got text: {msg}"),
+                        _ => break,
                     }
-                    _ => {
-                        //ignore
                     }
-                }
-
-                input_str.clear();
-
-                let x = include_str!("../resource/example.1.txt");
-                // let x = include_str!("../resource/example.json");
-                let value = json!({
-                    "data": x,
-                });
-                let string = serde_json::to_string(&value).unwrap();
-                // println!("string:{}", string);
-                unsafe {
-                    session_.text(string).await.unwrap();
-                }
-                println!("发送指令");
-            }
-        });
-
-
-
-
-        while let Some(Ok(msg)) = msg_stream.recv().await {
-            match msg {
-                Message::Ping(bytes) => {
-                    // println!("pong: {:?}", String::from_utf8(bytes.to_owned().to_vec()));
-                    if session1.pong(&bytes).await.is_err() {
-                        eprintln!("Session disconnected");
-                        return;
-                    }
-                }
-                Message::Text(msg) => println!("Got text: {msg}"),
-                _ => break,
             }
         }
 
-        let _ = session1.close(None).await;
-        println!("websocket 会话已关闭!");
+        // while let Some(Ok(msg)) = msg_stream.next().await {
+        //     match msg {
+        //         Message::Ping(bytes) => {
+        //             if session.clone().pong(&bytes).await.is_err() {
+        //                 return;
+        //             }
+        //         }
+        //
+        //         Message::Text(msg) => println!("Got text: {msg}"),
+        //         _ => break,
+        //     }
+        // }
+
+        session.close(None).await.unwrap();
     });
 
     Ok(response)
 }
-
 
 #[actix_web::main]
 #[log_lib::log_handler]
@@ -90,16 +72,15 @@ async fn main() -> std::io::Result<()> {
         log::Level::Error,
         "Starting HTTP server at http://localhost:8080"
     );
-    println!("Starting HTTP server at http://localhost:8080");
 
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .route("/ws", web::get().to(ws))
     })
-        .bind("127.0.0.1:8080")?
-        .run()
-        .await?;
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await?;
 
     Ok(())
 }
