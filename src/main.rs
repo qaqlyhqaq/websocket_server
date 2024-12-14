@@ -12,17 +12,18 @@ use std::str::pattern::Pattern;
 use std::sync::Arc;
 use std::sync::mpmc::TryRecvError;
 use std::sync::mpsc::channel;
+use actix_web::rt::Runtime;
 use serde_json::{json, Value};
 
 async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Responder> {
     let (response, mut session, mut msg_stream) = actix_ws::handle(&req, body)?;
 
     actix_web::rt::spawn(async move {
-        let (sender, receiver) = channel();
 
-        let mut session_ = session.clone();
+        let mut session_ = session;
+        let mut session1 = session_.clone();
 
-        let handle = std::thread::spawn(async move || {
+        tokio::task::spawn(async move  {
             println!("开始发送指令");
             let mut input_str = String::new();
             let stdin = std::io::stdin();
@@ -31,7 +32,6 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
 
                 match input_str {
                     ref in_str if in_str.starts_with("e") => {
-                        sender.send("exit".to_string()).unwrap();
                         unsafe {
                             session_.close(None).await.unwrap();
                         }
@@ -51,7 +51,6 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
                 });
                 let string = serde_json::to_string(&value).unwrap();
                 // println!("string:{}", string);
-                // sender.send(string).unwrap();
                 unsafe {
                     session_.text(string).await.unwrap();
                 }
@@ -59,7 +58,6 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
             }
         });
 
-        drop(handle);
 
 
 
@@ -67,7 +65,7 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
             match msg {
                 Message::Ping(bytes) => {
                     // println!("pong: {:?}", String::from_utf8(bytes.to_owned().to_vec()));
-                    if session.pong(&bytes).await.is_err() {
+                    if session1.pong(&bytes).await.is_err() {
                         eprintln!("Session disconnected");
                         return;
                     }
@@ -77,14 +75,16 @@ async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Resp
             }
         }
 
-        let _ = session.close(None).await;
+        let _ = session1.close(None).await;
         println!("websocket 会话已关闭!");
     });
 
     Ok(response)
 }
 
+
 #[actix_web::main]
+#[log_lib::log_handler]
 async fn main() -> std::io::Result<()> {
     log::log!(
         log::Level::Error,
