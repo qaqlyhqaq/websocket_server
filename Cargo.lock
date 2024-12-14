@@ -1019,7 +1019,7 @@ dependencies = [
 [[package]]
 name = "log_lib"
 version = "0.1.0"
-source = "git+https://github.com/qaqlyhqaq/log_lib.git#08e7f3983e6268c58985307b38d791e07358f1d8"
+source = "git+https://github.com/qaqlyhqaq/log_lib.git#c2f0ec402236f52b8031dea820d3f8ceb4988037"
 dependencies = [
  "chrono",
  "log",
@@ -1030,7 +1030,7 @@ dependencies = [
 [[package]]
 name = "log_macro"
 version = "0.0.1"
-source = "git+https://github.com/qaqlyhqaq/log_marco.git#fe4047f9408fde851e87c072e7f9289c12c70f8f"
+source = "git+https://github.com/qaqlyhqaq/log_lib.git#c2f0ec402236f52b8031dea820d3f8ceb4988037"
 dependencies = [
  "quote",
  "syn 1.0.109",
