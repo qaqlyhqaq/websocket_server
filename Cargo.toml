@@ -13,9 +13,13 @@ path = "examples/ws_client.rs"
 actix = { version = "0.13" ,features = ["default"] }
 actix-web = { version = "4",features = ["default"] }
 actix-ws = { version = "0.3",features = [] }
-futures-util = "0.3.31"
-log = "0.4.22"
+futures-util = { version = "0.3.31" }
+log = { version = "0.4.22" }
 serde_json = { version = "1.0.117" }
 serde = { version = "1.0.203", features = ["derive"] }
 tokio = {version = "*",features = ["full"]}
 log_lib = { git = "https://github.com/qaqlyhqaq/log_lib.git"}
+
+
+[dev-dependencies]
+tokio-tungstenite = { version = "0.26" }
