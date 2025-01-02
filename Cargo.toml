@@ -3,6 +3,12 @@ name = "websocket_server"
 version = "0.1.0"
 edition = "2024"
 
+
+[[example]]
+name = "ws-client"
+path = "examples/ws_client.rs"
+
+
 [dependencies]
 actix = { version = "0.13" ,features = ["default"] }
 actix-web = { version = "4",features = ["default"] }
