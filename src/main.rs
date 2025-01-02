@@ -28,31 +28,6 @@ async fn ws(
 ) -> actix_web::Result<impl Responder> {
     let (response, mut session, mut msg_stream) = actix_ws::handle(&req, body)?;
 
-    let (send, mut recv) = tokio::sync::mpsc::channel::<String>(10);
-
-
-
-    thread::spawn(move || {
-        let stdin1 = std::io::stdin();
-
-        loop {
-            let mut line = String::new();
-            stdin1.read_line(&mut line);
-            match line.as_str() {
-                ref line if line.starts_with("e") => {
-                    send.send("exit".to_string());
-                }
-                _ => {}
-            }
-        }
-    });
-
-
-    let handle1 = actix_web::rt::spawn(async move {
-
-        session.close(None).await.unwrap();
-    });
-
     Ok(response)
 }
 
